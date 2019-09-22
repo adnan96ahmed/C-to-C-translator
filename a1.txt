@@ -1,0 +1,810 @@
+/**********************************a1.c****************************************
+Student Name: Adnan Ahmed                               Student Number: 0883865
+Date: Jan 29, 2017                                      Course Name: CIS 2750
+I have exclusive control over this submission via my password.
+By including this statement in this header comment, I certify that:
+     1) I have read and understood the University policy on academic integrity;
+     2) I have completed the Computing with Integrity Tutorial on Moodle; and
+     3) I have achieved at least 80% in the Computing with Integrity Self Test.
+I assert that this work is my own. I have appropriately acknowledged any and all
+material(data, images, ideas or words) that I have used, whether directly quoted or paraphrased.
+Furthermore, I certify that this assignment was prepared by me specifically for this course.
+
+Summary: A program which converts a simplified version of C++ into a C program
+        which can then be compiled. 
+
+References: List ADT structure and functions from previous course: CIS 2520.
+******************************************************************************/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "interface.h"
+
+void addToList(List *L);
+void searchList(List *L);
+
+/******
+Function Name: printList
+Summary: Function to print out list of tokens with styling to output file after they have been modified.
+******/
+void printList(List *L, char *outfileName) {
+    FILE *outfile;
+    char *fileName;
+    ListNode *listCheck;
+    int i;    
+    int tab = 0;
+
+    fileName = malloc(sizeof(char*)*strlen(outfileName)+strlen(".c")+1);
+    strcpy(fileName, outfileName);
+    strcat(fileName, ".c");    
+
+    outfile=fopen(fileName,"w");
+    if (L->first != NULL) {
+        listCheck = L->first;
+/*
+        printf("%s\n", listCheck->token.name);
+*/
+        if (strstr(listCheck->token.name, "#")!=NULL || strstr(listCheck->token.name, "/")!=NULL) {
+            /*printf("%s\n", listCheck->token.name);*/
+            fprintf(outfile, "%s\n", listCheck->token.name);
+        } else {
+            /*printf("%s ", listCheck->token.name);*/
+            fprintf(outfile, "%s ", listCheck->token.name);
+        }
+        
+        while (listCheck->next != NULL) {
+            listCheck = listCheck->next;
+            if (strstr(listCheck->token.name,"{")!=NULL) {
+                tab = tab+1;
+            }
+            if (strstr(listCheck->token.name,"}")!=NULL) {
+                tab = tab-1;
+            } 
+/*
+            printf("%s\n", listCheck->token.name);
+*/
+            if (strstr(listCheck->token.name, "#")!=NULL || strstr(listCheck->token.name, "/")!=NULL) {
+                /*printf("%s\n", listCheck->token.name);*/
+                fprintf(outfile, "%s\n", listCheck->token.name);
+            } else {
+                /*printf("%s ", listCheck->token.name);*/
+                if ((strstr(listCheck->token.name, ".")!=NULL) || (strstr(listCheck->token.name, "=")!=NULL) || (strstr(listCheck->token.name, "!")!=NULL) || (strstr(listCheck->token.name, "-")!=NULL)) {
+                    fprintf(outfile, "%s", listCheck->token.name);
+                } else {
+                    fprintf(outfile, "%s ", listCheck->token.name);
+                }
+            }
+            
+            /*when to tab and put in a new line*/
+            if (strstr(listCheck->token.name,";")!=NULL || strstr(listCheck->token.name,"{")!=0 || strstr(listCheck->token.name,"}")!=NULL) {
+                /*printf("\n");*/
+                fprintf(outfile, "\n");
+                if (strstr(listCheck->token.name,"}")!=NULL) {
+                    fprintf(outfile, "\n");
+                }
+                for (i = 0; i < tab; i++) {
+                    /*printf("\t");*/
+                    fprintf(outfile, "\t");
+                }
+            }
+        }
+    }
+    fclose(outfile);
+    free(fileName);
+}
+
+int main(int argc, char *argv[]) {
+    
+    FILE *infile, *temp;
+    char *fileName;
+	List L;
+    int ch;
+    int quote = 0, include = 0;
+    int pos = 0; /*character position*/
+    int bsPos = 0; /*backslash position*/
+
+    infile=fopen(argv[1],"r");
+    fileName = strtok(argv[1], ".");
+
+    if (infile == NULL)
+    {
+        printf("Can't open file\n");
+        return 1;
+    }
+
+    /*saving tokens to temp file after parsing by each character*/
+    temp=fopen("temp.cc","w");
+    while ((ch = fgetc(infile)) != EOF) {
+        if (ch == '#' || ch == '/') {
+            include = 1;
+        }
+        if (include == 1 && ch == '\n') {
+            include = 0;
+            fprintf(temp, "\n");
+        }
+
+        if (ch == '\\') {
+            bsPos = pos;
+        }
+        if (ch == '"') {
+            if (quote == 0) {
+                quote = 1;
+            } else if (quote == 1) {
+                quote = 0;
+            }
+            /*negates if backslash character is before current quotation*/
+            if (bsPos == pos-1) {
+                quote = 1;
+            }
+        }
+        if (quote == 1 || include == 1) {
+            fprintf(temp, "%c",ch);
+        } else if (quote == 0 && include == 0) {
+            switch (ch) {
+                case ' ' :
+                    fprintf(temp, "\n");
+                    break;
+                case '\t' :
+                    break;
+                case '\n' :
+                    break;
+                case '\r' :
+                    fprintf(temp, "\n");
+                    break;
+                case ',' :
+                    fprintf(temp, "\n%c", ch);
+                    break;
+                case ';':
+                    fprintf(temp, "\n%c\n", ch);
+                    break;
+                case '(' :
+                    fprintf(temp, "%c\n", ch);
+                    break;
+                case ')' :
+                    fprintf(temp, "\n%c", ch);
+                    break;
+                case '{' :
+                    fprintf(temp, "%c\n", ch);
+                    break;
+                case '}' :
+                    fprintf(temp, "%c\n", ch);
+                    break;
+                case '.' :
+                    fprintf(temp, "%c\n", ch);
+                    break;
+                case '+' :
+                    fprintf(temp, "\n%c\n", ch);
+                    break;
+                case '-' :
+                    fprintf(temp, "\n%c\n", ch);
+                    break;
+                case '*' :
+                    fprintf(temp, "\n%c\n", ch);
+                    break;
+                case '=' :
+                    fprintf(temp, "\n%c\n", ch);
+                    break;
+                default :
+                    fprintf(temp, "%c", ch);
+            }
+        }
+        pos++;
+    }
+    fprintf(temp, "\n"); /*important for last line to end with new line char*/
+    fclose(infile);
+    fclose(temp);
+
+    Initialize(&L);
+    addToList(&L);
+    searchList(&L);
+
+    printList(&L, fileName);
+
+    DestroyList(&L);
+    remove("temp.cc");
+
+    return (0);
+}
+
+/******
+Function Name: addToList
+Summary: Function adds tokens from a temporary file to a list ADT.
+******/
+void addToList(List *L) {
+    FILE *infile;
+    char buffer[151];
+    char *token;
+    int position = 0;
+	Token T;
+	
+    infile=fopen("temp.cc","r");
+    
+    /*parsing each line of temp file to save as a token in the list*/
+    while (fgets(buffer, 150, infile) != NULL) {
+
+        if (feof(infile)) {
+            break;
+        }
+
+        token = strtok(buffer, "\n");
+
+        if (token!=NULL) {
+            InitializeToken(token,&T);
+		    Insert(T,position,L);
+            position++;
+        }
+    }
+    fclose(infile);
+}
+
+/******
+Function Name: searchList
+Summary: Functions searches through list of tokens and makes adjustments to the tokens and the list.
+******/
+void searchList(List *L) {
+
+    ListNode *listCheck;
+    ListNode *tempCheck;
+
+    /*struct and function variables*/
+    int j, k, l;
+    int sPos = 0; /*structure number*/
+    int vPos = 0; /*variable number - struct*/
+    int vnPos = 0; /*variables of type struct number - struct*/
+    int foldPos = 0; /*function old name position - must reset to 0 when new struct encountered*/
+    int fnewPos = 0; /*function new name position - must reset to 0 when new struct encountered*/
+    int fvPos = 0; /*function variable position*/
+    struct Structure *myStructs;
+    myStructs = malloc(sizeof(Structure)*20);
+
+    /*mallocing for structNames*/
+    for (j=0;j<20;j++) {
+        myStructs[j].structName = malloc(sizeof(char)*20);
+    }
+
+    /*mallocing array of variable names and each variable name*/
+    for (j=0;j<20;j++) {
+        myStructs[j].variables = malloc(sizeof(char*)*20);
+        
+        for (k=0;k<20;k++) {
+            myStructs[j].variables[k] = malloc(sizeof(char)*20);
+        }
+    }
+
+    /*mallocing for varNames*/
+    for (j=0;j<20;j++) {
+        myStructs[j].varNames = malloc(sizeof(char*)*20);
+        
+        for (k=0;k<20;k++) {
+            myStructs[j].varNames[k] = malloc(sizeof(char)*20);
+        }
+    }
+
+    /*mallocing for list of functions for list of structs*/
+    for (j=0;j<20;j++) {
+        myStructs[j].functions = malloc(sizeof(Function)*20);
+        for (k=0;k<20;k++) {
+            myStructs[j].functions[k].oldName = malloc(sizeof(char)*20);
+            myStructs[j].functions[k].newName = malloc(sizeof(char)*20);
+            myStructs[j].functions[k].variables = malloc(sizeof(char*)*20);
+            for (l=0;l<20;l++) {
+                myStructs[j].functions[k].variables[l] = malloc(sizeof(char)*20);
+            }
+        }
+    }
+
+    int i;
+    int position = 0;
+
+    char *constructorCall; /*line to call constructor*/
+    char *refParameter; /*struct reference in parameter of function*/
+
+    int inStruct = 0; /*for first function in class*/
+    int endStruct = 0; /*for last function in class*/
+
+    int lastTypePos = 0; /*last variable type position*/
+    int lastFuncPtr = 0; /*last function pointer location*/
+
+    char lastTypeName[20] = "";
+    char *funcPtrName = "";
+
+    char *lastStructName; /*last struct name encountered*/
+    char *newName = ""; /*new function name*/
+    char buffer[20] = " "; /*buffer to end of new function name*/
+    char otherBuffer[150] = " "; /*buffer for parameter list*/
+    char *nameEnd = ""; /*end of new function name - overload*/
+
+    char *constructorName;
+    char *funcAssignmentName;
+    int lastLinkPos = 0; /*last assignment position for function to function pointer*/
+
+    char *structVar;
+    char *tempChar;
+
+    /*variables for function variable exchange with struct reference*/
+    int checkOne = 0; /*check to see if function variable matches a struct variable*/
+    int checkTwo = 1; /*check to see if function variable not in parameter list for function - initially true*/
+    int checkThree = 0; /*check to see if function variable not declared in function*/
+    int m;
+    int posCheck = 0;
+/*
+    int lastTypeCheck = 0;
+*/
+    int noChangePos = 0;
+    char **noChangeVar; /*array of variables not to be change because they were declared in function*/
+    char *replaceVar; /*replacement variable with struct reference*/
+    ListNode *tmpCheckTwo; /*used to go through a line and add declared variables to noChangeVar list*/
+
+	Token T;
+
+    /***listCheck no longer exists after a replacement has taken place, you must come back
+        to the same position in the list for anything to work!***/
+    if (L->first != NULL) {
+        listCheck = L->first;
+        do {
+/*
+            printf("%s\n", listCheck->token.name);
+*/
+            if (strcmp(listCheck->token.name, "class")==0) {
+                lastStructName = listCheck->next->token.name;
+                if (strcmp(listCheck->next->next->token.name, "{")==0) {
+                    foldPos=0;
+                    fnewPos=0;
+                    vPos=0;
+                    inStruct = 1;
+                    endStruct = 1;
+                    /*myStructs[sPos].structName = malloc(sizeof(char*)*strlen(lastStructName)+1);*/
+                    strcpy(myStructs[sPos].structName, lastStructName);
+
+                    /*gathering class variables*/
+                    tempCheck=listCheck;
+                    while (strstr(listCheck->token.name, "(")==NULL) {
+                        if (strcmp(listCheck->token.name, "int")==0 || strcmp(listCheck->token.name, "float")==0 || strcmp(listCheck->token.name, "long")==0 || strcmp(listCheck->token.name, "double")==0 || strcmp(listCheck->token.name, "char")==0 || strcmp(listCheck->token.name, "short")==0) {
+/*
+                            strcpy(myStructs[sPos].variables[vPos], listCheck->token.name);
+                            strcat(myStructs[sPos].variables[vPos], " ");      
+                            strcpy(myStructs[sPos].variables[vPos], listCheck->next->token.name);
+                            vPos++;
+*/           
+                            listCheck=listCheck->next;
+                            while ((strcmp(listCheck->token.name, ";")!=0) && (strstr(listCheck->token.name, "(")==NULL)) {
+                                printf("token: %s\n", listCheck->token.name);
+                                if ((strcmp(listCheck->token.name, ",")!=0) && (strcmp(listCheck->token.name, ";")!=0)) {
+                                    strcpy(myStructs[sPos].variables[vPos], listCheck->token.name);
+                                    vPos++;
+                                }
+                                listCheck=listCheck->next;
+                            }
+                        }
+                        if (strstr(listCheck->token.name, "(")==NULL) {
+                        listCheck=listCheck->next; }
+                    }
+                    listCheck=tempCheck;
+                } else {
+                    vnPos=0;
+                    /*adding function pointer name*/
+                    constructorCall = malloc(strlen("constructor")+sizeof(char*)*strlen(lastStructName)+strlen("(&")+strlen(listCheck->next->next->token.name)+strlen(");")+1);
+                    strcpy(constructorCall, "constructor");
+                    strcat(constructorCall, lastStructName);
+                    strcat(constructorCall, "(&");
+                    strcat(constructorCall, listCheck->next->next->token.name);
+                    strcat(constructorCall, ");");
+
+                    InitializeToken(constructorCall,&T);
+		            Insert(T,position+4,L); /*+4 of current pos will be after semicolon*/
+                    free(constructorCall);
+
+                    /*adding varNames*/                    
+                    for (j=0;j<20;j++) {
+                        if (strcmp(myStructs[j].structName, lastStructName)==0) {
+                            strcpy(myStructs[j].varNames[vnPos], listCheck->next->next->token.name);
+                            vnPos++;
+                        }
+                    }
+
+                }
+                /*replacement after comparing with current listCheck*/
+                InitializeToken("struct",&T);
+                Remove(position,L);
+		        Insert(T,position,L);
+            } else if (strcmp(listCheck->token.name, "int")==0 || strcmp(listCheck->token.name, "float")==0 || strcmp(listCheck->token.name, "long")==0 || strcmp(listCheck->token.name, "double")==0 || strcmp(listCheck->token.name, "char")==0 || strcmp(listCheck->token.name, "short")==0 || strcmp(listCheck->token.name, "void")==0) {
+                lastTypePos = position;
+                strcpy(lastTypeName, listCheck->token.name);
+
+                /*printf("%s\n%d\n", listCheck->token.name, position);*/
+            } else if ((lastTypePos == position-1) && (strstr(listCheck->token.name, "(")!=NULL) && (strcmp(listCheck->token.name, "main(")!=0) && (endStruct==1)) {
+
+                fvPos = 0;
+                refParameter = malloc(strlen("struct ")+sizeof(char*)*strlen(lastStructName)+strlen(" *myStruct,")+1);
+
+                /*struct refernce parameter*/
+                strcpy(refParameter, "struct ");
+                strcat(refParameter, lastStructName);
+                strcat(refParameter, " *myStruct");
+
+                if (strcmp(listCheck->next->token.name, "int")==0 || strcmp(listCheck->next->token.name, "float")==0 || strcmp(listCheck->next->token.name, "long")==0 || strcmp(listCheck->next->token.name, "double")==0 || strcmp(listCheck->next->token.name, "char")==0 || strcmp(listCheck->next->token.name, "void")==0) {
+                    strcat(refParameter, ",");
+                }
+
+                /*insert function reference as first parameter to all struct functions*/
+                InitializeToken(refParameter,&T);
+		        Insert(T,position+1,L);
+                free(refParameter);
+                lastLinkPos++;
+
+                /*reset buffer and nameEnd*/                
+                strcpy(buffer, " ");
+                strcpy(otherBuffer, " ");
+                nameEnd = "";
+                /*printf("%d\n%d\n", lastTypePos, position);*/
+                if (inStruct == 1) {
+                    lastFuncPtr = position-1;
+                    /*go through list to end of struct*/
+                    tempCheck=listCheck;
+                    lastLinkPos = position;
+                    while (strcmp(listCheck->token.name,"main(")!=0) {
+                        listCheck=listCheck->next;
+                        lastLinkPos++;
+                    }
+                    listCheck=tempCheck;
+                    InitializeToken("};",&T);
+		            Insert(T,position-1,L);
+                    position++; /*list has added another token before current pos so ++ to pos*/
+                }
+
+                /*gathering old names for functions*/
+                for (j=0;j<20;j++) {
+                    if (strcmp(myStructs[j].structName, lastStructName)==0) {
+                        strcpy(myStructs[j].functions[foldPos].oldName, listCheck->token.name);
+                        foldPos++;
+                    }
+                }
+
+                posCheck=position;
+                tempCheck=listCheck;
+                while (strcmp(listCheck->token.name,")")!=0) {
+                    listCheck=listCheck->next;
+                    strcat(otherBuffer, listCheck->token.name);
+                    strcat(otherBuffer, " ");
+                    posCheck++;
+                    if (strcmp(listCheck->token.name,"int")==0) {
+                        strcat(buffer, "i");
+                    } else if (strcmp(listCheck->token.name,"float")==0) {
+                        strcat(buffer, "f");
+                    } else if (strcmp(listCheck->token.name,"long")==0) {
+                        strcat(buffer, "l");
+                    } else if (strcmp(listCheck->token.name,"double")==0) {
+                        strcat(buffer, "d");
+                    } else if (strcmp(listCheck->token.name,"char")==0) {
+                        strcat(buffer, "c");
+                    } else if (strcmp(listCheck->token.name,"short")==0) {
+                        strcat(buffer, "s");
+                    } else if ((strcmp(listCheck->token.name,",")!=0) && (strstr(listCheck->token.name, "struct")==NULL) && (strcmp(listCheck->token.name,")")!=0)) {
+                        for (j=0;j<20;j++) {
+                            if (strcmp(myStructs[j].structName, lastStructName)==0) {
+                                for (k=0;k<20;k++) {
+                                    if (strcmp(myStructs[j].functions[k].oldName,tempCheck->token.name)==0) {
+                                        strcpy(myStructs[j].functions[k].variables[fvPos], listCheck->token.name);
+                                        fvPos++;
+/*
+                                        printf("%s\n", listCheck->token.name);
+*/
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                /*adding to list */
+                noChangePos = 0;
+                noChangeVar = malloc(sizeof(char*)*20);
+                for (j=0;j<20;j++) {
+                    noChangeVar[j] = malloc(sizeof(char)*20);
+                }
+
+                /*loop to go through function content and compare it with saved info on structs 
+                and lists to see if any variable qualifies to be exchanged with a struct reference*/
+                while (strcmp(listCheck->token.name,"}")!=0) {
+                    checkOne=0;
+                    checkTwo=1;
+                    checkThree=1;
+/*
+                    printf("%s\n", listCheck->token.name);
+*/
+                    tmpCheckTwo=listCheck;
+                    if (strcmp(listCheck->token.name, "int")==0 || strcmp(listCheck->token.name, "float")==0 || strcmp(listCheck->token.name, "long")==0 || strcmp(listCheck->token.name, "double")==0 || strcmp(listCheck->token.name, "char")==0 || strcmp(listCheck->token.name, "short")==0) {
+/*
+                        lastTypeCheck = posCheck;
+*/
+                        /*variable has been declared and goes into an array of variables that should not be changed*/
+                        while (strcmp(listCheck->token.name, ";")!=0) {
+                            if ((strcmp(listCheck->token.name, ",")!=0) && (strcmp(listCheck->token.name, ";")!=0)) {
+                                strcpy(noChangeVar[noChangePos],listCheck->token.name);
+                                noChangePos++;
+                            }
+                            listCheck=listCheck->next;
+                        }
+                    }
+                    listCheck=tmpCheckTwo;
+
+                    for (j=0;j<20;j++) {
+                        if (strcmp(myStructs[j].structName, lastStructName)==0) {
+                            for (k=0;k<20;k++) {
+                                if (strcmp(myStructs[j].variables[k],listCheck->token.name)==0) {
+                                    checkOne = 1;
+/*
+                                    printf("%s\n", myStructs[j].variables[k]);
+*/
+                                    for (l=0;l<20;l++) {
+                                        if (strcmp(myStructs[j].functions[l].oldName, tempCheck->token.name)==0) {
+                                            for (m=0;m<20;m++) {
+                                                if (strcmp(myStructs[j].functions[l].variables[m], listCheck->token.name)==0) {
+                                                    checkTwo=0;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+/*
+                    if (lastTypeCheck == posCheck-1) {
+                        strcpy(noChangeVar[noChangePos],listCheck->token.name);
+                        noChangePos++;
+                    } 
+*/
+
+                    for (j=0;j<20;j++) {
+                        if (strcmp(noChangeVar[j],listCheck->token.name)==0) {
+                            checkThree=0;
+                        }
+                    }
+
+                    /*if all 3 checks pass then change the variable*/
+                    if (checkOne==1 && checkTwo==1 && checkThree==1) {
+
+                        replaceVar = malloc(strlen("myStruct->")+sizeof(char)*strlen(listCheck->token.name)+1);
+                        strcpy(replaceVar, "myStruct->");
+                        strcat(replaceVar, listCheck->token.name);
+
+                        Remove(posCheck+1,L);
+                        InitializeToken(replaceVar,&T);
+		                Insert(T,posCheck+1,L);
+
+                        free(replaceVar);
+                    }
+
+                    listCheck=L->first;
+                    for(i=0;i<=posCheck;i++) {
+		                listCheck=listCheck->next;
+	                }
+
+                    listCheck=listCheck->next;
+                    posCheck++;
+                }
+
+                for (j=0;j<20;j++) {
+                    free(noChangeVar[j]);
+                }
+                free(noChangeVar);
+
+                listCheck=tempCheck;
+
+                strcat(buffer, "(");
+                /*printf("%zd\n", strlen(buffer));*/
+                /*printf("%sVV\n", buffer);*/
+
+                nameEnd = malloc(sizeof(char*)*(strlen(buffer)-1)+1);
+                strcpy(nameEnd, &buffer[1]);
+                strtok(listCheck->token.name, "(");
+
+                /*new function name*/
+                newName = malloc(sizeof(char*)*strlen(lastStructName)+strlen(listCheck->token.name)+sizeof(char*)*strlen(nameEnd)+1);
+
+                strcpy(newName, lastStructName);
+                strcat(newName, listCheck->token.name);
+                strcat(newName, nameEnd);
+
+                /*modifying nameEnd*/
+                strcat(lastTypeName, " (*"); /*adding the pointer*/
+                if (strcmp(nameEnd, "(")==0) {
+                    strcpy(nameEnd,")");
+                } else {
+                    strtok(nameEnd, "(");
+                    strcat(nameEnd, ")");
+                }
+
+                /*adding function pointer name*/
+                funcPtrName = malloc(sizeof(char*)*strlen(lastStructName)+strlen(tempCheck->token.name)+sizeof(char*)*strlen(nameEnd)+sizeof(char*)*(strlen(lastTypeName)-1)+strlen("(")+(strlen(otherBuffer)-1)+strlen(";")+1);
+
+                strcpy(funcPtrName, lastTypeName);
+                strcat(funcPtrName, lastStructName);
+                strcat(funcPtrName, tempCheck->token.name);
+                strcat(funcPtrName, nameEnd);
+                strcat(funcPtrName, "(");
+                strcat(funcPtrName, &otherBuffer[1]);
+                strcat(funcPtrName, ";");
+
+                /*adding function constructor header name*/
+                constructorName = malloc(strlen("void constructor")+sizeof(char*)*strlen(lastStructName)+strlen("(struct ")+sizeof(char*)*strlen(lastStructName)+strlen(" *myStruct) {")+1);
+
+                strcpy(constructorName, "void constructor");
+                strcat(constructorName, lastStructName);
+                strcat(constructorName, "(struct ");
+                strcat(constructorName, lastStructName);
+                strcat(constructorName, " *myStruct) {");
+
+                /*adding function assignment to function pointer*/
+                funcAssignmentName = malloc(strlen("myStruct->")+sizeof(char*)*(strlen(newName)-1)+strlen(" = &")+sizeof(char*)*(strlen(newName)-1)+strlen(";")+1);
+
+                /*replacing function name*/
+                InitializeToken(newName,&T);
+                Remove(position,L);
+		        Insert(T,position,L);
+
+                /*adding new names for functions*/
+                for (j=0;j<20;j++) {
+                    if (strcmp(myStructs[j].structName, lastStructName)==0) {
+                        strcpy(myStructs[j].functions[fnewPos].newName, newName);
+                        fnewPos++;
+                    }
+                }
+
+                /*modifying newName*/
+                strtok(newName, "(");
+
+                strcpy(funcAssignmentName, "myStruct->");
+                strcat(funcAssignmentName, newName);
+                strcat(funcAssignmentName, " = &");
+                strcat(funcAssignmentName, newName);
+                strcat(funcAssignmentName, ";");
+
+                /*creating and putting function pointer into list*/
+                InitializeToken(funcPtrName,&T);
+		        Insert(T,lastFuncPtr,L);
+                position++;/*list has added another token before current pos so ++ to pos*/
+                lastLinkPos++;
+
+                /*adding constructor header*/
+                if (inStruct==1) {
+                    InitializeToken(constructorName,&T);
+		            Insert(T,lastLinkPos,L);
+                    lastLinkPos++;
+                    inStruct=0;
+                    position++;/*list has added another token before current pos so ++ to pos*/
+                }
+
+                /*adding function pointer assignment*/
+                InitializeToken(funcAssignmentName,&T);
+		        Insert(T,lastLinkPos,L);
+                lastLinkPos++;
+                
+                lastFuncPtr++;/*next function pointer location*/
+
+                free(nameEnd);
+                free(newName);
+                free(funcPtrName);
+                free(constructorName);
+                free(funcAssignmentName);
+
+            } else if ((strcmp(listCheck->token.name, "}")==0) && (listCheck->next != NULL)) {
+                if (strcmp(listCheck->next->token.name, "}")==0) {
+                    if (endStruct == 1) {
+                        if (strcmp(listCheck->next->next->token.name, ";")==0) {
+                            Remove(position+1,L); /*removing the semicolon after right curly bracket*/
+                        }
+                        if (strcmp(listCheck->next->token.name,"}")==0) {
+                            Remove(position+1,L); /*removing right curly bracket*/                            
+                        }
+                        Remove(position+1,L);
+                        /*adding right curly bracket at end of constructor function*/
+                        InitializeToken("}",&T);
+		                Insert(T,lastLinkPos-2,L);
+                        lastLinkPos++;
+                        /*position++;list has added another token before current pos so ++ to pos*/
+                        endStruct = 0;
+                        sPos++;
+                    }
+                }
+            } else if (strstr(listCheck->token.name, ".")!=NULL) {
+                /*checking for period because of possible function call*/
+                structVar = malloc(strlen("&")+sizeof(char*)*strlen(listCheck->token.name)+1+1);            
+                tempChar = malloc(sizeof(char*)*strlen(listCheck->token.name)+1);  
+
+                strcpy(tempChar,listCheck->token.name);
+                tempChar = strtok(tempChar, ".");
+              
+                strcpy(structVar, "&");
+                strcat(structVar, listCheck->token.name);
+                structVar = strtok(structVar, ".");
+                if (strcmp(listCheck->next->next->token.name,")")!=0) {
+                    strcat(structVar,",");
+                }
+
+                /*for changing function name to the new name during function call and passing struct reference
+                    as a parameter*/
+                for (j=0;j<20;j++) {
+                    for (k=0;k<20;k++) {
+                        if (strcmp(myStructs[j].varNames[k],tempChar)==0) {
+                            for (l=0;l<20;l++) {
+                                if (strcmp(myStructs[j].functions[l].oldName,listCheck->next->token.name)==0) {
+                                    /*changing old function name to new function name during function call*/
+                                    Remove(position+1,L);
+                                    InitializeToken(myStructs[j].functions[l].newName,&T);
+		                            Insert(T,position+1,L);
+                                    /*inserting function reference into 1st parameter*/
+                                    InitializeToken(structVar,&T);
+		                            Insert(T,position+2,L);
+                                } 
+                            }
+                        }
+                    }
+                }
+                free(tempChar);
+                free(structVar);
+            }
+
+            listCheck=L->first;
+            for(i=0;i<=position;i++) {
+		        listCheck=listCheck->next;
+	        }
+            position++;
+        } while (listCheck != NULL);
+    }
+
+
+    /*freeing for functions in structs*/
+    for (j=0;j<20;j++) {
+        for (k=0;k<20;k++) {
+            for (l=0;l<20;l++) {
+/*
+                if (j<2 && k<5 && l<5) {
+                    printf("%d, %d, %d: %s\n", j, k, l, myStructs[j].functions[k].variables[l]);
+                    printf("%d, %d, %d: %s\n", j, k, l, myStructs[j].functions[k].variables[l]); }
+*/
+                free(myStructs[j].functions[k].variables[l]);
+            }
+/*
+            if (j<2 && k<3) {
+                    printf("%d, %d: %s\n", j, k, myStructs[j].functions[k].oldName);
+            }
+*/
+            free(myStructs[j].functions[k].oldName);
+            free(myStructs[j].functions[k].newName);
+            free(myStructs[j].functions[k].variables);
+        }
+        free(myStructs[j].functions);
+    }
+
+    /*freeing for varNames*/
+    for (j=0;j<20;j++) {
+        for (k=0;k<20;k++) {
+            free(myStructs[j].varNames[k]);
+        }
+        free(myStructs[j].varNames);
+    }
+
+    /*freeing array of variable names and each variable name*/
+    for (j=0;j<20;j++) {
+        for (k=0;k<20;k++) {
+/*
+            if (j<3) {
+            printf("%d, %d: %s\n", j, k, myStructs[j].variables[k]); }
+*/
+            free(myStructs[j].variables[k]);
+        }
+        free(myStructs[j].variables);
+    }
+
+    for (j=0; j<20; j++) {
+        /*printf("%d: %s\n", j, myStructs[j].structName);*/
+        free(myStructs[j].structName);
+    }
+
+    free(myStructs);
+}
+

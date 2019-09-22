@@ -1,0 +1,222 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "translate.h"
+
+void buttonElement(char **args, int argNum) {
+    FILE *outfile;
+    char *token1;
+    char *token2;
+
+    outfile = fopen("outfile.txt", "a");
+
+    token1=strtok(args[0],"=");
+    token1=strtok(NULL,"=");
+
+    token2=strtok(args[1],"=");
+    token2=strtok(NULL,"=");
+
+    fprintf(outfile,"<a href=\"%s\" class=\"button\">%s</a>\n", token2,token1);
+
+    fclose(outfile);
+}
+
+void drawElement() {
+    FILE *outfile;
+
+    outfile = fopen("outfile.txt", "a");
+
+    fprintf(outfile,"<hr>\n");
+    printf("<hr>\n");
+
+    fclose(outfile);
+}
+
+void executableElement(char **args, int argNum) {
+
+}
+
+void headingElement(char **args, int argNum) {
+    FILE *outfile;
+    int i=0;
+    char *token1;
+    char *textContent="";
+    char *headingSize="";
+
+    outfile = fopen("outfile.txt", "a");
+
+    for(i=0;i<argNum;i++) {
+        if (strstr(args[i],"=")!=NULL) {
+            token1=strtok(args[i],"=");
+            if (strcmp(token1,"text")==0) {
+                textContent=strtok(NULL,"=");
+            } else if (strcmp(token1,"size")==0) {
+                headingSize=strtok(NULL,"=");
+            } else {
+                printf("%s\n", args[i]);
+                fprintf(outfile,"%s\n", args[i]);
+            }
+        } else {
+            printf("%s\n", args[i]);
+            fprintf(outfile,"%s\n", args[i]);
+        }
+    }
+
+    if ((strcmp(textContent,"")!=0) && (strcmp(headingSize,"")!=0)) {
+        printf("<h%s>%s</h%s>\n", headingSize,textContent,headingSize);
+        fprintf(outfile,"<h%s>%s</h%s>\n", headingSize,textContent,headingSize);
+    } else if ((strcmp(textContent,"")!=0) && (strcmp(headingSize,"")==0)) {
+        printf("<h3>%s</h3>\n", textContent);
+        fprintf(outfile,"<h3>%s</h3>\n", textContent);
+    }
+
+    fclose(outfile);
+}
+
+void inputElement(char **args, int argNum) {
+
+}
+
+void linkElement(char **args, int argNum) {
+    FILE *outfile;
+    char *token1;
+    char *text="";
+    char *link="";
+
+    outfile = fopen("outfile.txt", "a");
+
+    for(i=0;i<argNum;i++) {
+        if (strstr(args[i],"=")!=NULL) {
+            token1=strtok(args[i],"=");
+
+            if (strcmp(token1,"text")==0) {
+                text=strtok(NULL,"=");
+            } else if (strcmp(token1,"link")==0) {
+                link=strtok(NULL,"=");
+            } else {
+                printf("%s\n", args[i]);
+                fprintf(outfile,"%s\n", args[i]);
+            }
+        } else {
+            printf("%s\n", args[i]);
+            fprintf(outfile,"%s\n", args[i]);
+        }
+    }
+
+    if (strcmp(text,"")==0) {
+        fprintf(outfile,"<a href=\"%s\">text</a>\n", link);
+        printf("<a href=\"%s\">text</a>\n", link);
+    } else {
+        fprintf(outfile,"<a href=\"%s\">%s</a>\n", link,text);
+        printf("<a href=\"%s\">%s</a>\n", link,text);
+    }
+
+    fclose(outfile);
+}
+
+void pictureElement(char **args, int argNum) {
+    FILE *outfile;
+    int i=0;
+    char *token1;
+    char *token2;
+    char *imageName;
+    char *width="";
+    char *height="";
+
+    outfile = fopen("outfile.txt", "a");
+
+    for(i=0;i<argNum;i++) {
+        if (strstr(args[i],"=")!=NULL) {
+            token1=strtok(args[i],"=");
+
+            if (strcmp(token1,"image")==0) {
+                imageName=strtok(NULL,"=");
+            } else if (strcmp(token1,"size")==0) {
+                token2=strtok(NULL,"=");
+                width=strtok(token2,"x");
+                height=strtok(NULL,"x");
+            } else {
+                printf("%s\n", args[i]);
+                fprintf(outfile,"%s\n", args[i]);
+            }
+        } else {
+            printf("%s\n", args[i]);
+            fprintf(outfile,"%s\n", args[i]);
+        }
+    }
+
+    if ((strcmp(width,"")==0) && (strcmp(width,"")==0)) {
+        fprintf(outfile,"<img src=\"%s\" height=\"100\" width=\"100\">\n", imageName);
+        printf("<img src=\"%s\" height=\"100\" width=\"100\">\n", imageName);
+    } else {
+        fprintf(outfile,"<img src=\"%s\" height=\"%s\" width=\"%s\">\n", imageName,height,width);
+        printf("<img src=\"%s\" height=\"%s\" width=\"%s\">\n", imageName,height,width);
+    }
+    
+    fclose(outfile);
+}
+
+void radioElement(char **args, int argNum) {
+    FILE *outfile;
+    char *token1;
+    char *token2;
+    char *token3;
+
+    outfile = fopen("outfile.txt", "a");
+
+    token1=strtok(args[0],"=");
+    token1=strtok(NULL,"=");
+
+    token2=strtok(args[1],"=");
+    token2=strtok(NULL,"=");
+
+
+}
+
+void textElement(char **args, int argNum) {
+    FILE *outfile;
+    FILE *readfile;
+    int i=0;
+    long fileSize;
+    char *token1;
+    char *token2;
+    char *fileContent;
+
+    outfile = fopen("outfile.txt", "a");
+
+    for(i=0;i<argNum;i++) {
+        if (strstr(args[i],"=")!=NULL) {
+            token1=strtok(args[i],"=");
+            token2=strtok(NULL,"=");
+
+            if (strcmp(token1,"text")==0) {
+                printf("%s\n",token2);
+                fprintf(outfile,"%s\n",token2);
+            } else if (strcmp(token1,"file")==0){
+                readfile = fopen(token2, "r");
+
+                /*ref: http://stackoverflow.com/questions/14002954/c-programming-how-to-read-the-whole-file-contents-into-a-buffer*/
+                fseek(readfile, 0, SEEK_END);
+                fileSize = ftell(readfile);
+                fseek(readfile, 0, SEEK_SET);
+
+                fileContent = malloc(fileSize + 1);
+                fread(fileContent, fileSize, 1, readfile);
+
+                printf("%s\n", fileContent);
+                fprintf(outfile,"%s\n", fileContent);
+
+                free(fileContent);
+                fclose(readfile);
+            } else {
+                printf("%s\n", args[i]);
+                fprintf(outfile,"%s\n", args[i]);
+            }
+        } else {
+            printf("%s\n", args[i]);
+            fprintf(outfile,"%s\n", args[i]);
+        }
+    }
+
+    fclose(outfile);
+}

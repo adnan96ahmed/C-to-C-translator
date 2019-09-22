@@ -1,0 +1,299 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+struct userPost {
+    char *username;
+    char *streamname;
+    char *date;
+    char *text;
+} userPost;
+
+void updateStream(struct userPost *st) {
+
+    char *streamLocation;
+    char *streamDataLocation;
+    char *completePost;
+    int tempChar;
+    int dataEnd = 0;
+    FILE *fp;
+    FILE *fp2;
+
+    streamLocation = malloc(sizeof(char)*80);
+    streamDataLocation = malloc(sizeof(char)*80);
+    completePost = malloc(sizeof(char)*300);
+
+    /*stream file*/
+    strcpy(streamLocation, "messages/");
+    strcat(streamLocation, st->streamname);
+    strcat(streamLocation, "Stream");
+
+    fp = fopen(streamLocation, "a+");
+
+    fprintf(fp, "Sender: %s\n", st->username);
+    fprintf(fp, "Date: %s\n", st->date);
+    fprintf(fp, "%s", st->text);
+
+    fclose(fp);
+    fp = fopen(streamLocation, "r");
+
+    /*streamData file*/
+    strcpy(streamDataLocation, "messages/");
+    strcat(streamDataLocation, st->streamname);
+    strcat(streamDataLocation, "Stream");
+    strcat(streamDataLocation, "Data");
+
+    fp2 = fopen(streamDataLocation, "a+");
+
+    while ((tempChar = fgetc(fp)) != EOF) {
+        dataEnd++;
+    }
+
+    fprintf(fp2, "%d\n", dataEnd);
+
+    free(completePost);
+    free(streamLocation);
+    free(streamDataLocation);
+    fclose(fp2);
+    fclose(fp);
+}
+
+void addUser(char *username, char *list) {
+
+    char *token; 
+    char *fileNameLocation;
+    char *streamFileLocation;
+    char *streamDataLocation;
+
+    FILE *streamUserFile;
+    FILE *streamFile;
+    FILE *streamDataFile;
+
+    char buffer[51];
+    int authorExists = 0;
+
+    fileNameLocation = malloc(sizeof(char)*50);
+    streamFileLocation = malloc(sizeof(char)*50);
+    streamDataLocation = malloc(sizeof(char)*50);
+
+    strcpy(fileNameLocation, "messages/");
+    strcpy(streamFileLocation, "messages/");
+    strcpy(streamDataLocation, "messages/");
+
+    if (strstr(list, ",")!=NULL) {
+        token = strtok(list, ",");
+        /*printf("token: %s\n", token);*/
+        strcat(fileNameLocation, token);
+        strcat(fileNameLocation, "StreamUsers");
+        streamUserFile = fopen(fileNameLocation, "a+");
+
+        strcat(streamFileLocation, token);
+        strcat(streamFileLocation, "Stream");
+        streamFile = fopen(streamFileLocation, "a+");
+
+        strcat(streamDataLocation, token);
+        strcat(streamDataLocation, "StreamData");
+        streamDataFile = fopen(streamDataLocation, "a+");
+
+        while (fgets(buffer,50,streamUserFile)!=NULL) {
+            if (feof(streamUserFile)) {
+                break;
+            }
+            if (strstr(buffer,username)!=NULL) {
+                authorExists=1;
+            }
+        }
+        
+        if (authorExists==0) {
+            fprintf(streamUserFile, "%s\t0\n", username);
+        }
+
+        fclose(streamUserFile);
+        fclose(streamFile);
+        fclose(streamDataFile);
+        while (token!=NULL) {
+            token = strtok(NULL, ",");
+            if (token!=NULL) {
+                /*printf("token: %s\n", token);*/
+                strcpy(fileNameLocation, "messages/");
+                strcat(fileNameLocation, token);
+                strcat(fileNameLocation, "StreamUsers");
+                streamUserFile = fopen(fileNameLocation, "a+");
+
+                strcpy(streamFileLocation, "messages/");
+                strcat(streamFileLocation, token);
+                strcat(streamFileLocation, "Stream");
+                streamFile = fopen(streamFileLocation, "a+");
+
+                strcpy(streamDataLocation, "messages/");
+                strcat(streamDataLocation, token);
+                strcat(streamDataLocation, "StreamData");
+                streamDataFile = fopen(streamDataLocation, "a+");
+
+                while (fgets(buffer,50,streamUserFile)!=NULL) {
+                    if (feof(streamUserFile)) {
+                        break;
+                    }
+                    if (strstr(buffer,username)!=NULL) {
+                        authorExists=1;
+                    }
+                }
+                
+                if (authorExists==0) {
+                    fprintf(streamUserFile, "%s\t0\n", username);
+                }
+
+                fclose(streamUserFile);
+                fclose(streamFile);
+                fclose(streamDataFile);
+            }
+        }
+        /*printf("list: %s\n", list);*/
+    } else {
+        strcat(fileNameLocation, list);
+        strcat(fileNameLocation, "StreamUsers");
+        streamUserFile = fopen(fileNameLocation, "a+");
+
+        strcat(streamFileLocation, list);
+        strcat(streamFileLocation, "Stream");
+        streamFile = fopen(streamFileLocation, "a+");
+
+        strcat(streamDataLocation, list);
+        strcat(streamDataLocation, "StreamData");
+        streamDataFile = fopen(streamDataLocation, "a+");
+
+        while (fgets(buffer,50,streamUserFile)!=NULL) {
+            if (feof(streamUserFile)) {
+                break;
+            }
+            if (strstr(buffer,username)!=NULL) {
+                authorExists=1;
+            }
+        }
+        
+        if (authorExists==0) {
+            fprintf(streamUserFile, "%s\t0\n", username);
+        }
+        fclose(streamUserFile);
+        fclose(streamFile);
+        fclose(streamDataFile);
+    }
+    free(fileNameLocation);
+    free(streamFileLocation);
+    free(streamDataLocation);
+}
+
+
+void removeUser(char *username, char *list) {
+
+    char *token; 
+    char *fileNameLocation;
+
+    FILE *streamUserFile;
+    FILE *tempFile;
+
+    int removeAuthor = 1;
+    char buffer[51];
+    int authorExists = 0;
+
+    fileNameLocation = malloc(sizeof(char)*50);
+    strcpy(fileNameLocation, "messages/");
+
+    if (strstr(list, ",")!=NULL) {
+        token = strtok(list, ",");
+        /*printf("token: %s\n", token);*/
+        strcat(fileNameLocation, token);
+        strcat(fileNameLocation, "StreamUsers");
+        streamUserFile = fopen(fileNameLocation, "a+");
+
+        if (removeAuthor==1) {
+            tempFile = fopen("messages/temp.txt", "w");
+        }
+
+        while (fgets(buffer,50,streamUserFile)!=NULL) {
+            if (feof(streamUserFile)) {
+                break;
+            }
+            if (strstr(buffer,username)!=NULL) {
+                authorExists=1;
+            } else {
+				if (removeAuthor==1) {
+                    fprintf(tempFile, "%s", buffer);
+                }
+			}
+        }
+
+		if (removeAuthor==1) {
+			remove(fileNameLocation);
+			rename("messages/temp.txt", fileNameLocation);
+			fclose(tempFile);
+		}
+
+        fclose(streamUserFile);
+        while (token!=NULL) {
+            token = strtok(NULL, ",");
+            if (token!=NULL) {
+                /*printf("token: %s\n", token);*/
+                strcpy(fileNameLocation, "messages/");
+                strcat(fileNameLocation, token);
+                strcat(fileNameLocation, "StreamUsers");
+                streamUserFile = fopen(fileNameLocation, "a+");
+
+				if (removeAuthor==1) {
+				    tempFile = fopen("messages/temp.txt", "w");
+				}
+
+                while (fgets(buffer,50,streamUserFile)!=NULL) {
+                    if (feof(streamUserFile)) {
+                        break;
+                    }
+                    if (strstr(buffer,username)!=NULL) {
+                        authorExists=1;
+                    } else {
+						if (removeAuthor==1) {
+                    		fprintf(tempFile, "%s", buffer);
+                		}
+					}
+                }
+
+				if (removeAuthor==1) {
+					remove(fileNameLocation);
+					rename("messages/temp.txt", fileNameLocation);
+					fclose(tempFile);
+				}
+                fclose(streamUserFile);
+            }
+        }
+        /*printf("list: %s\n", list);*/
+    } else {
+        strcat(fileNameLocation, list);
+        strcat(fileNameLocation, "StreamUsers");
+        streamUserFile = fopen(fileNameLocation, "a+");
+
+        if (removeAuthor==1) {
+            tempFile = fopen("messages/temp.txt", "w");
+        }
+
+        while (fgets(buffer,50,streamUserFile)!=NULL) {
+            if (feof(streamUserFile)) {
+                break;
+            }
+            if (strstr(buffer,username)!=NULL) {
+                authorExists=1;
+            } else {
+                if (removeAuthor==1) {
+                    fprintf(tempFile, "%s", buffer);
+                }
+            }
+        }
+
+		if (removeAuthor==1) {
+			remove(fileNameLocation);
+			rename("messages/temp.txt", fileNameLocation);
+			fclose(tempFile);
+		}
+        fclose(streamUserFile);
+    }
+    free(fileNameLocation);
+}
+

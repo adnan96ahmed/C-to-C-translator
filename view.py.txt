@@ -1,0 +1,216 @@
+#!/usr/bin/python3
+
+#refernce: http://stackoverflow.com/questions/19264066/tracing-keypresses-in-python
+
+import sys
+import os
+from tkinter import *
+
+if __name__=="__main__": 
+
+    userExists = False
+
+    if len(sys.argv) < 2:
+        print("Username should be included as the second argument!")
+        exit()
+    elif len(sys.argv) > 2:
+        print("Too many arguments!")
+        exit()
+
+    #ref: http://stackoverflow.com/questions/3964681/find-all-files-in-directory-with-extension-txt-in-python
+    for file in os.listdir(os.curdir+"/messages"):
+        if file.endswith("StreamUsers"):
+            #print(file)
+            #print(os.listdir(os.curdir+"/messages"))
+            a_file = open("messages/"+file, encoding='utf-8')
+            userExists = False
+            for a_line in a_file:
+                #print(a_line)
+                if sys.argv[1] in a_line:
+                    userExists=True
+            if userExists == True:
+                theUserStream = file[:-11]
+                print(theUserStream+" ", end="")
+            a_file.close()
+
+    print("all", end="")
+
+    stream = input("\n")
+    stream = stream+"Stream"
+    streamData = stream+"Data" 
+    streamUsers = stream+"Users"
+
+    #using streamUsers file
+    a_file = open("messages/"+streamUsers, encoding='utf-8')
+    
+    for a_line in a_file:
+        if sys.argv[1] in a_line:
+            #print(a_line, end="")
+            tokens = a_line.split()
+            postNumber = tokens[1]
+
+    a_file.close()
+
+    #using streamData file
+    a_file = open("messages/"+streamData, encoding='utf-8')
+
+    count = 0
+    postNumber = int(postNumber)
+    #print(postNumber)
+
+    if postNumber==0:
+        startPos = 0
+    else:
+        while (count < postNumber):
+            startPos = a_file.readline()
+            #readLength = a_file.readline()
+            #print(a_line, end="")
+            count=count+1 
+
+    a_file.close()
+
+    root = Tk()
+    text = Text(root, height=24, width=80)
+
+    #using stream file
+    a_file = open("messages/"+stream, encoding='utf-8')
+    postRead = postNumber;    
+    #readLength = int(readLength)
+    startPos = int(startPos)
+    seekPos = startPos
+    a_file.seek(startPos)
+    count = 0
+    while (count < 23):
+        a_line = a_file.readline()
+        if "Sender: " in a_line:
+            postRead=postRead+1
+            if a_line=="":
+                text.insert(END,"\n");
+            if count!=0:
+                text.insert(END, "------------------------------\n")
+                count=count+1
+        text.insert(END, a_line)
+        count=count+1
+    text.insert(END, "Up Arrow  Down Arrow  O-order toggle  M-mark all  S-stream  C-check for new")
+
+    #writing to streamUsers file
+    #ref: http://stackoverflow.com/questions/4710067/deleting-a-specific-line-in-a-file-python
+    streamUserFile = open("messages/"+streamUsers, 'r')
+    content = streamUserFile.readlines()
+    streamUserFile.close()
+
+    streamUserFile = open("messages/"+streamUsers, 'w')
+    for a_line in content:
+        if a_line == sys.argv[1]+"\t"+str(postNumber)+"\n":
+            streamUserFile.write(sys.argv[1]+"\t"+str(postRead)+"\n")
+        else:
+            streamUserFile.write(a_line)
+    streamUserFile.close()
+
+    #a_file.close()
+
+    text.config(state=DISABLED)
+
+    pageUpPressed=0
+
+    #down arrow command begin
+    def page_down(event, postRead, pageUpPressed):
+        if pageUpPressed>0:
+            pageUpPressed=pageUpPressed-1
+        seekPos=a_file.tell()
+        text.config(state=NORMAL)
+        text.delete(1.0,END)
+        count = 0
+        while (count < 23):
+            a_line = a_file.readline()
+            if a_line=="":
+                text.insert(END,"\n");
+            if "Sender: " in a_line:
+                if pageUpPressed==0:
+                    postRead=postRead+1
+                if count!=0:
+                    text.insert(END, "------------------------------\n")
+                    count=count+1
+            text.insert(END, a_line)
+            count=count+1
+
+        #writing to streamUsers file
+        streamUserFile = open("messages/"+streamUsers, 'r')
+        content = streamUserFile.readlines()
+        streamUserFile.close()
+
+        streamUserFile = open("messages/"+streamUsers, 'w')
+        for a_line in content:
+            if a_line == sys.argv[1]+"\t"+str(postNumber)+"\n":
+                streamUserFile.write(sys.argv[1]+"\t"+str(postRead)+"\n")
+            else:
+                streamUserFile.write(a_line)
+        streamUserFile.close()
+        text.insert(END, "Up Arrow  Down Arrow  O-order toggle  M-mark all  S-stream  C-check for new")
+        text.config(state=DISABLED)
+    #down arrow command end
+
+    #up arrow command begin
+    def page_up(event, pageUpPressed):
+        pageUpPressed=pageUpPressed+1
+        text.config(state=NORMAL)
+        text.delete(1.0,END)
+
+#        temp = a_file
+#        a_file.seek(0)
+#        lines = a_file.readlines()
+#        a_file.seek(0)
+#        count = 0
+#        for line in a_file:
+#            if temp = a_file:
+#                pos = count
+#            count=count+1
+        
+
+        a_file.seek(seekPos)
+        count = 0
+        while (count < 23):
+            a_line = a_file.readline()
+            if "Sender: " in a_line:
+                if count!=0:
+                    text.insert(END, "------------------------------\n")
+                    count=count+1
+            text.insert(END, a_line)
+            count=count+1
+
+        text.insert(END, "Up Arrow  Down Arrow  O-order toggle  M-mark all  S-stream  C-check for new")
+        text.config(state=DISABLED)
+    #up arrow command end
+
+    #mark all command begin
+    def mark_all(event):
+        numOfPosts=0
+        streamFile = open("messages/"+stream, encoding='utf-8')
+        
+        for line in streamFile:
+            if "Sender: " in line:
+                numOfPosts=numOfPosts+1
+        streamFile.close()
+
+        #writing to streamUsers file
+        streamUserFile = open("messages/"+streamUsers, 'r')
+        content = streamUserFile.readlines()
+        streamUserFile.close()
+
+        streamUserFile = open("messages/"+streamUsers, 'w')
+        for a_line in content:
+            if a_line == sys.argv[1]+"\t"+str(postRead)+"\n":
+                streamUserFile.write(sys.argv[1]+"\t"+str(numOfPosts)+"\n")
+            else:
+                streamUserFile.write(a_line)
+        streamUserFile.close()
+    #mark all command end
+
+    text.pack()
+    root.bind('<q>', lambda e:root.quit())
+    root.bind('<Down>', lambda event: page_down(event, postRead, pageUpPressed))
+    root.bind('<Up>', lambda event: page_up(event, pageUpPressed))
+    root.bind('<m>', lambda event: mark_all(event))
+    root.mainloop()
+    a_file.close()
+
